@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nutric_bot_backend
+    restart: no
+    env_file:
+      - ./backend/.env
+    environment:
+      PYTHONPATH: /backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: nutric_bot_aiogram
+    restart: no
+    env_file:
+      - ./bot/.env
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:13
+    container_name: nutric_bot_db
+    restart: no
+    environment:
+      POSTGRES_USER: nutric_bot_user
+      POSTGRES_PASSWORD: secure_password
+      POSTGRES_DB: nutric_bot_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  db_data:
