@@ -26,4 +26,4 @@ class MessageModel(Base):
     is_processed = Column(Boolean, default=False)
 
     # Связь с моделью User
-    user = relationship("User", back_populates="messages")
+    user = relationship("UserModel", back_populates="messages")

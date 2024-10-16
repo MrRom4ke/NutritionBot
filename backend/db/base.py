@@ -1,10 +1,6 @@
 import asyncio
-import uuid
-from datetime import datetime
 
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import  declarative_base, relationship
-from sqlalchemy import Column, Integer, String, Float, Boolean, Date, DateTime, Index, ForeignKey, Table, UniqueConstraint, func
+from sqlalchemy.ext.declarative import declarative_base
 
 from db.session import engine
 

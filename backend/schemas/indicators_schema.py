@@ -19,7 +19,7 @@ class IndicatorSchema(IndicatorBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class IndicatorCollectionBase(BaseModel):
     """Базовая схема для модели IndicatorCollection, содержащая общие поля."""
@@ -37,7 +37,7 @@ class IndicatorCollectionSchema(IndicatorCollectionBase):
     collection_time: datetime = datetime.utcnow()
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class DailyIndicatorBase(BaseModel):
     """Базовая схема для модели DailyIndicator, содержащая общие поля."""
@@ -57,4 +57,4 @@ class DailyIndicatorSchema(DailyIndicatorBase):
     updated_at: datetime = datetime.utcnow()
 
     class Config:
-        orm_mode = True
+        from_attributes = True

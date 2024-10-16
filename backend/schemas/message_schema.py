@@ -18,7 +18,7 @@ class BotMessage(BotMessageBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class MessageBase(BaseModel):
     """Базовая схема для модели Message, которая содержит все общие поля."""
@@ -36,4 +36,4 @@ class MessageSchema(MessageBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -16,8 +16,8 @@ class IndicatorModel(Base):
     measurement_type = Column(String, nullable=False)
     theme = Column(String, nullable=False)
 
-    collections = relationship('IndicatorCollection', back_populates='indicator')
-    daily_indicators = relationship('DailyIndicator', back_populates='indicator')
+    collections = relationship('IndicatorCollectionModel', back_populates='indicator')
+    daily_indicators = relationship('DailyIndicatorModel', back_populates='indicator')
 
 class IndicatorCollectionModel(Base):
     __tablename__ = 'indicator_collections'
@@ -28,8 +28,8 @@ class IndicatorCollectionModel(Base):
     indicator_id = Column(UUID(as_uuid=True), ForeignKey('indicators.id'), nullable=False)
     value = Column(Float, nullable=True)
 
-    user = relationship('User', back_populates='collections')
-    indicator = relationship('Indicator', back_populates='collections')
+    user = relationship('UserModel', back_populates='collections')
+    indicator = relationship('IndicatorModel', back_populates='collections')
 
 class DailyIndicatorModel(Base):
     __tablename__ = 'daily_indicators'
@@ -46,5 +46,5 @@ class DailyIndicatorModel(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
-    user = relationship('User', back_populates='daily_indicators')
-    indicator = relationship('Indicator', back_populates='daily_indicators')
+    user = relationship('UserModel', back_populates='daily_indicators')
+    indicator = relationship('IndicatorModel', back_populates='daily_indicators')
