@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 # Рабочая директория
-WORKDIR /backend
+WORKDIR /alembic
 
 # Копия файла зависимостей
 COPY requirements.txt ./
@@ -10,11 +10,11 @@ COPY requirements.txt ./
 # Установка зависимостей
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование всех файлов в рабочую директорию
+# Копирование всех файлов Alembic
 COPY . .
 
 # Установите PYTHONPATH
 ENV PYTHONPATH=/backend
 
-# Команда для запуска приложения
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Команда для выполнения миграции
+CMD ["alembic", "upgrade", "head"]
