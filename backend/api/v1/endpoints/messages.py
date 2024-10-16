@@ -1,50 +1,30 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from typing import List
-from pydantic import BaseModel
+from uuid import UUID
 
-# Определение модели сообщения
-class Message(BaseModel):
-    id: int
-    content: str
+from schemas.message_schema import MessageCreate, MessageSchema
+from services.message_service import MessageService
+from db.session import async_session
 
-# Создание экземпляра маршрутизатора
 router = APIRouter()
 
-# Имитация базы данных для хранения сообщений
-messages_db = []
-
-# Получение всех сообщений
-@router.get("/", response_model=List[Message])
-async def get_messages():
-    return messages_db
-
-# Получение сообщения по ID
-@router.get("/{message_id}", response_model=Message)
-async def get_message(message_id: int):
-    for message in messages_db:
-        if message.id == message_id:
-            return message
-    raise HTTPException(status_code=404, detail="Message not found")
-
-# Создание нового сообщения
-@router.post("/", response_model=Message)
-async def create_message(message: Message):
-    messages_db.append(message)
+@router.post("/messages/", response_model=MessageSchema)
+def create_message(message_data: MessageCreate, db: Session = Depends(async_session)):
+    message_service = MessageService(db)
+    message = message_service.create_message(message_data)
     return message
 
-# Обновление сообщения
-@router.put("/{message_id}", response_model=Message)
-async def update_message(message_id: int, updated_message: Message):
-    for index, message in enumerate(messages_db):
-        if message.id == message_id:
-            messages_db[index] = updated_message
-            return updated_message
-    raise HTTPException(status_code=404, detail="Message not found")
+@router.get("/messages/user/{user_id}", response_model=List[MessageSchema])
+def read_messages_by_user(user_id: UUID, db: Session = Depends(async_session)):
+    message_service = MessageService(db)
+    messages = message_service.get_messages_by_user(user_id)
+    return messages
 
-# Удаление сообщения
-@router.delete("/{message_id}", response_model=Message)
-async def delete_message(message_id: int):
-    for index, message in enumerate(messages_db):
-        if message.id == message_id:
-            return messages_db.pop(index)
-    raise HTTPException(status_code=404, detail="Message not found")
+@router.get("/messages/{message_id}", response_model=MessageSchema)
+def read_message(message_id: UUID, db: Session = Depends(async_session)):
+    message_service = MessageService(db)
+    message = message_service.get_message(message_id)
+    if message is None:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return message

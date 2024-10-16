@@ -1,7 +1,8 @@
-fastapi
+fastapi~=0.115.2
 uvicorn[standard]
 sqlalchemy
 asyncpg
 pydantic
 python-dotenv
 pydantic-settings
+

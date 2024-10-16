@@ -3,7 +3,8 @@
 from fastapi import FastAPI
 
 from api.v1.endpoints import users, messages
-from db.session import engine, Base
+from db.session import engine
+from db.base import Base
 
 
 app = FastAPI(title="Nutric Bot Backend")
