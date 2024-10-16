@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -9,7 +9,7 @@ class UserBase(BaseModel):
     telegram_id: int
     username: Optional[str] = None
     is_active: bool = True
-    created_at: datetime = datetime.utcnow()
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
 
 class UserCreate(UserBase):
     """Схема для создания нового пользователя. Она наследует поля из UserBase,
@@ -28,4 +28,4 @@ class UserSchema(UserBase):
     id: UUID
 
     class Config:
-        orm_mode = True  # Позволяет использовать ORM-объекты
+        from_attributes = True

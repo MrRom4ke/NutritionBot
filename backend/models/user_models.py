@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -15,8 +15,8 @@ class UserModel(Base):
     telegram_id = Column(Integer, unique=True, nullable=False)
     username = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now())
 
-    messages = relationship("Message", back_populates="user")
-    collections = relationship('IndicatorCollection', back_populates='user')
-    daily_indicators = relationship('DailyIndicator', back_populates='user')
+    messages = relationship("MessageModel", back_populates="user")
+    collections = relationship('IndicatorCollectionModel', back_populates='user')
+    daily_indicators = relationship('DailyIndicatorModel', back_populates='user')
