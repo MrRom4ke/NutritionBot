@@ -6,6 +6,7 @@ from typing import Optional
 
 class UserBase(BaseModel):
     """Базовая схема, содержащая общие поля для пользователя. Используется для создания и обновления данных."""
+    id: UUID
     telegram_id: int
     username: Optional[str] = None
     is_active: bool = True
@@ -25,7 +26,6 @@ class UserUpdate(UserBase):
 class UserSchema(UserBase):
     """Схема, которая включает все поля модели User, включая id, и также устанавливает orm_mode в True,
     чтобы можно было использовать объекты SQLAlchemy при возврате ответов."""
-    id: UUID
 
     class Config:
         from_attributes = True

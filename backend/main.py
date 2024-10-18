@@ -1,4 +1,6 @@
 # backend/app/main.py
+import os
+import sys
 
 from fastapi import FastAPI
 
@@ -11,6 +13,8 @@ from models.user_models import UserModel
 from models.indicators_models import IndicatorModel, IndicatorCollectionModel, DailyIndicatorModel
 from models.message_models import MessageModel
 
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 app = FastAPI(title="Nutric Bot Backend")
 
