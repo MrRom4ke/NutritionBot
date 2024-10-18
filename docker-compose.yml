@@ -6,31 +6,36 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: nutric_bot_backend
-    restart: no
+    restart: unless-stopped
+    working_dir: /backend
     env_file:
       - ./backend/.env
     environment:
-      PYTHONPATH: /backend
+      PYTHONPATH: /backend  # Устанавливаем PYTHONPATH, чтобы Python видел директории
     ports:
       - "8000:8000"
     depends_on:
       - db
+    volumes:
+      - ./backend:/backend  # Монтируем папку backend
 
   bot:
     build:
       context: ./bot
       dockerfile: Dockerfile
     container_name: nutric_bot_aiogram
-    restart: no
+    restart: unless-stopped
     env_file:
       - ./bot/.env
     depends_on:
       - backend
+    volumes:
+      - ./bot:/bot  # Монтируем папку bot
 
   db:
     image: postgres:13
     container_name: nutric_bot_db
-    restart: no
+    restart: unless-stopped
     environment:
       POSTGRES_USER: nutric_bot_user
       POSTGRES_PASSWORD: secure_password
@@ -40,22 +45,22 @@ services:
     ports:
       - "5432:5432"
 
-  alembic:
-    build:
-      context: ./alembic
-      dockerfile: Dockerfile
-    container_name: nutric_bot_alembic
-    restart: no
-    volumes:
-      - ./alembic:/alembic
-      - ./backend:/backend
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://nutric_bot_user:secure_password@db:5432/nutric_bot_db
-      - DEBUG=true
-    depends_on:
-      - db
-    working_dir: /alembic
-#    entrypoint: ["alembic", "upgrade", "head"] Запускает Alembic для применения всех миграций при старте контейнера.
+#  alembic:
+#    build:
+#      context: ./alembic
+#      dockerfile: Dockerfile
+#    container_name: nutric_bot_alembic
+#    restart: no
+#    volumes:
+#      - ./alembic:/alembic
+#      - ./backend:/backend
+#    environment:
+#      - DATABASE_URL=postgresql+asyncpg://nutric_bot_user:secure_password@db:5432/nutric_bot_db
+#      - DEBUG=true
+#    depends_on:
+#      - db
+#    working_dir: /alembic
+#    entrypoint: ["alembic", "upgrade", "head"]  # Запускает Alembic для применения всех миграций при старте контейнера.
 
 volumes:
   db_data:

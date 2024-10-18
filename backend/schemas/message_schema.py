@@ -21,15 +21,31 @@ class BotMessage(BotMessageBase):
         from_attributes = True
 
 class MessageBase(BaseModel):
-    """Базовая схема для модели Message, которая содержит все общие поля."""
+    """
+    Базовая схема для модели Message, которая содержит все общие поля.
+    """
     user_id: UUID
     text: str
-    timestamp: datetime = datetime.utcnow()
+    topic: Optional[str] = None
+    timestamp: datetime = datetime.now()
     is_processed: bool = False
+    token_usage: Optional[int] = None
 
 class MessageCreate(MessageBase):
-    """Схема для создания нового сообщения. Она наследует поля из MessageBase."""
-    pass
+    """Схема для создания нового сообщения."""
+    user_id: UUID
+    text: str
+
+class MessageUpdate(MessageBase):
+    """Схема для обновления сообщения с уточнением."""
+    clarification_text: str
+
+class MessageResponse(BaseModel):
+    """
+    Схема для ответа после анализа или уточнения сообщения.
+    """
+    clarification_questions: str
+
 
 class MessageSchema(MessageBase):
     """Схема, которая включает все поля модели Message, включая id, и устанавливает orm_mode в True."""

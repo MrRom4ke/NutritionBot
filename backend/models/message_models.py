@@ -22,8 +22,17 @@ class MessageModel(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), index=True)  # Внешний ключ на таблицу пользователей
     text = Column(String)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    topic = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.now())
     is_processed = Column(Boolean, default=False)
+    token_usage = Column(Integer, nullable=True)
 
     # Связь с моделью User
     user = relationship("UserModel", back_populates="messages")
+
+class PromptModel(Base):
+    """Модель для хранения промтов, используемых для анализа текста."""
+    __tablename__ = "prompts"
+
+    name = Column(String, primary_key=True, index=True, unique=True)
+    content = Column(String, nullable=False)
