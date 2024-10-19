@@ -31,6 +31,7 @@ services:
       - backend
     volumes:
       - ./bot:/bot  # Монтируем папку bot
+      - whisper_cache:/root/.cache/whisper
 
   db:
     image: postgres:13
@@ -64,3 +65,4 @@ services:
 
 volumes:
   db_data:
+  whisper_cache:
