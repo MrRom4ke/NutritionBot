@@ -1,13 +1,12 @@
 # bot/main.py
 
-import os
-import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from dotenv import load_dotenv
 
 from register_handlers import register_handlers
 from config import BOT_TOKEN
+
+
 
 
 # Инициализация бота и диспетчера

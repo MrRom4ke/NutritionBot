@@ -20,7 +20,7 @@ class MessageModel(Base):
     __tablename__ = 'messages'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), index=True)  # Внешний ключ на таблицу пользователей
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), index=True)  # Внешний ключ на таблицу пользователей
     text = Column(String)
     topic = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.now())

@@ -19,7 +19,7 @@ async def analyze_text(text: str, prompt: str):
         messages=[
             {"role": "user", "content": f"Сообщение пользователя: {text}\n{prompt}"}
         ],
-        max_tokens=100
+        max_tokens=50
     )
     response_text = response.choices[0].message.content
     token_usage = response.usage.total_tokens

@@ -17,6 +17,6 @@ class UserModel(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.now())
 
-    messages = relationship("MessageModel", back_populates="user")
+    messages = relationship("MessageModel", back_populates="user", cascade="all, delete-orphan")
     collections = relationship('IndicatorCollectionModel', back_populates='user')
     daily_indicators = relationship('DailyIndicatorModel', back_populates='user')
