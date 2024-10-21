@@ -7,10 +7,10 @@ from config import BACKEND_URL
 # Команда /start
 async def start(message: types.Message):
     tg_id = message.from_user.id
-    usr_name = message.from_user.username
+    user_name = message.from_user.username
 
     endpoint = f"{BACKEND_URL}/api/v1/users"
     # Отправляем сообщение на FastAPI
     async with aiohttp.ClientSession() as session:
-        await session.post(endpoint, json={'telegram_id': tg_id, 'username': usr_name, 'is_active': True})
+        await session.post(endpoint, json={'telegram_id': tg_id, 'username': user_name})
     await message.answer("Добро пожаловать!")
