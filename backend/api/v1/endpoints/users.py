@@ -9,6 +9,7 @@ from db.session import get_async_session
 
 router = APIRouter()
 
+# +
 @router.post("/", response_model=UserSchema)
 async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_async_session)):
     user_service = UserService(db)

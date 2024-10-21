@@ -7,8 +7,6 @@ from register_handlers import register_handlers
 from config import BOT_TOKEN
 
 
-
-
 # Инициализация бота и диспетчера
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()

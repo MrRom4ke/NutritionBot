@@ -6,7 +6,7 @@ from typing import List
 from uuid import UUID
 
 from schemas.message_schema import MessageCreate, MessageSchema, MessageUpdate, MessageResponse, MessageProcessResponse, \
-    MessageNew, MessageDelete
+    MessageNew
 from services.message_service import MessageService
 from db.session import get_async_session
 from services.user_service import UserService
@@ -38,7 +38,7 @@ async def read_message(message_id: UUID, db: AsyncSession = Depends(get_async_se
         raise HTTPException(status_code=404, detail="Message not found")
     return message
 
-#-----------
+# +
 @router.post('/process', response_model=MessageProcessResponse)
 async def process_message(message_new: MessageNew, db: AsyncSession = Depends(get_async_session)):
     try:
@@ -72,7 +72,7 @@ async def update_message_value(message_data: MessageUpdate, db: AsyncSession = D
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
+# +
 @router.delete('/{message_id}', response_model=dict)
 async def delete_message(message_id: UUID, db: AsyncSession = Depends(get_async_session)):
     """Удаляет сообщение по идентификатору (UUID)."""
