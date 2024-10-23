@@ -18,5 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем код бота
 COPY . .
 
+# Отключение буферизации вывода
+ENV PYTHONUNBUFFERED=1
+
 # Команда для запуска бота
 CMD ["python", "main.py"]
