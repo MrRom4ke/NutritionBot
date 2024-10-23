@@ -1,82 +1,85 @@
-from openai.types.beta.threads import Message
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
 from models.message_models import PromptModel
 
 
-class BotMessageBase(BaseModel):
-    """Базовая схема для модели BotMessage, которая содержит все общие поля."""
-    step_number: Optional[int] = None
+# ------------------- Базовые схемы входящих сообщений -------------------
+class MessageBase(BaseModel):
+    """Базовая схема для модели Message."""
+    user_id: UUID
+    timestamp: datetime = datetime.now()
     text: str
-    media_url: Optional[HttpUrl] = None  # Используем HttpUrl для проверки корректности URL
+    topic: Optional[str] = None
+    is_complete: Optional[bool] = None
+    is_processed: bool = False
+    token_usage: Optional[int] = None
 
-class BotMessageCreate(BotMessageBase):
-    """Схема для создания нового BotMessage. Она наследует поля из BotMessageBase."""
+    class Config:
+        orm_mode = True  # Чтобы Pydantic мог работать с ORM объектами
+
+class MessageCreate(MessageBase):
+    """Схема для создания нового сообщения."""
     pass
 
-class BotMessage(BotMessageBase):
-    """Схема, которая включает все поля модели BotMessage, включая id, и устанавливает orm_mode в True."""
+class MessageRead(MessageBase):
+    """Схема для возврата данных о сообщении (чтение)."""
     id: UUID
 
     class Config:
         from_attributes = True
 
-class MessageBase(BaseModel):
-    """
-    Базовая схема для модели Message, которая содержит все общие поля.
-    """
+class MessageUpdate(BaseModel):
+    """Схема для обновления сообщения"""
     id: UUID
-    user_id: UUID
-    text: str
+    text: Optional[str] = None
     topic: Optional[str] = None
-    timestamp: datetime = datetime.now()
-    is_processed: bool = False
+    is_complete: Optional[bool] = None
+    is_processed: Optional[bool] = None
     token_usage: Optional[int] = None
 
-# +
-class MessageCreate(BaseModel):
-    """Схема для создания нового сообщения."""
-    user_id: UUID
-    text: str
-    token_usage: Optional[int] = None
-
-# +
 class MessageDelete(BaseModel):
     """Схема для удаления сообщения по его id"""
     id: UUID
 
-# +
-class MessageUpdate(BaseModel):
-    """Схема для обновления сообщения с уточнением."""
-    message_id: UUID
-    answer_text: str
-
-class MessageResponse(BaseModel):
-    """
-    Схема для ответа после анализа или уточнения сообщения.
-    """
-    clarification_questions: str
-
 class MessageSchema(MessageBase):
-    """Схема, которая включает все поля модели Message, включая id, и устанавливает orm_mode в True."""
+    """Схема, которая включает все поля модели Message"""
+    id: UUID
 
     class Config:
         from_attributes = True
 
-# +
-class MessageProcessResponse(BaseModel):
-    """Схема для отправки уточняющего сообщения."""
-    clarify_questions: str
-    message_id: UUID
-# +
-class MessageNew(BaseModel):
-    """Схема для создания нового сообщения."""
+
+# ------------------- Схемы для анализа сообщений -------------------
+class MessageNewFromTelegram(BaseModel):
+    """Схема для создания нового сообщения из Telegram"""
     telegram_id: int
     text: str
 
-class PromtContent(PromptModel):
+class MessageIsNotTopic(BaseModel):
+    id: UUID
+    text: str
+    topic: str
+
+class MessageIsComplete(BaseModel):
+    id: UUID
+    text: str
+    topic: Optional[str]
+    is_complete: bool
+
+class MessageClarify(BaseModel):
+    id: UUID
+    text: str
+    topic: Optional[str]
+    is_complete: bool
+    clarify_questions: str
+
+
+# ------------------- Схемы для работы с промтами -------------------
+class PromptContent(PromptModel):
     """Схема получения промтов из БД"""
-    pass
+
+
+# ------------------- Схема для исходящих от бота сообщений -------------------

@@ -23,6 +23,7 @@ class MessageModel(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), index=True)  # Внешний ключ на таблицу пользователей
     text = Column(String)
     topic = Column(String, nullable=True)
+    is_complete = Column(Boolean, nullable=True)
     timestamp = Column(DateTime, default=datetime.now())
     is_processed = Column(Boolean, default=False)
     token_usage = Column(Integer, nullable=True)

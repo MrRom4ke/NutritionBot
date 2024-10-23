@@ -46,22 +46,21 @@ services:
     ports:
       - "5432:5432"
 
-#  alembic:
-#    build:
-#      context: ./alembic
-#      dockerfile: Dockerfile
-#    container_name: nutric_bot_alembic
-#    restart: no
-#    volumes:
-#      - ./alembic:/alembic
-#      - ./backend:/backend
-#    environment:
-#      - DATABASE_URL=postgresql+asyncpg://nutric_bot_user:secure_password@db:5432/nutric_bot_db
-#      - DEBUG=true
-#    depends_on:
-#      - db
-#    working_dir: /alembic
-#    entrypoint: ["alembic", "upgrade", "head"]  # Запускает Alembic для применения всех миграций при старте контейнера.
+  alembic:
+    build:
+      context: .  # Контекст сборки — корневая папка проекта
+      dockerfile: ./alembic/Dockerfile  # Dockerfile для Alembic
+    container_name: nutric_bot_alembic
+    restart: no
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nutric_bot_user:secure_password@db:5432/nutric_bot_db
+    depends_on:
+      - db
+    volumes:
+      - ./alembic:/app/alembic  # Монтируем папку alembic в контейнер
+      - ./backend:/app/backend  # Монтируем папку backend в контейнер
+    working_dir: /app/alembic  # Рабочая директория для Alembic
+
 
 volumes:
   db_data:

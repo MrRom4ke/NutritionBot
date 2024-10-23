@@ -6,17 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from models.message_models import MessageModel, PromptModel
-from schemas.message_schema import MessageCreate, MessageSchema, MessageResponse, MessageUpdate, PromtContent, \
-    MessageProcessResponse, MessageDelete
-from utils.ai_utils import analyze_text, finalize_analysis
+from schemas.message_schema import MessageCreate, MessageSchema, MessageUpdate, MessageNewFromTelegram
+from utils.ai_utils import analyze_text
 
 
 class MessageService:
-    """Содержит методы для создания сообщений, получения сообщений по ID пользователя и получения сообщения по ID."""
+    """Содержит методы сообщений отражающие бизнес логику"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
-    # +
+
     async def create_message(self, message_data: MessageCreate) -> MessageSchema:
         """Создаёт новое сообщение и сохраняет его в базе данных."""
         message = MessageModel(**message_data.model_dump())
@@ -25,19 +24,42 @@ class MessageService:
         await self.db.refresh(message)
         return MessageSchema.model_validate(message)
 
-    # +
-    async def update_value(self, message_data: MessageUpdate) -> MessageSchema:
-        """Обновляет значение записи, прибавляя новое значение к существующему."""
-        # Поиск записи по идентификатору
-        result = await self.db.execute(select(MessageModel).where(MessageModel.id == message_data.message_id))
+    async def update_message_value(self, message_data: MessageUpdate) -> MessageSchema:
+        """Метод для обновления сообщения: добавляет новое значение к существующему полю."""
+        result = await self.db.execute(select(MessageModel).where(MessageModel.id == message_data.id))
         message = result.scalar_one_or_none()
-        # Обновляем значение, прибавляя новое к текущему
-        message.text += f'\n{message_data.answer_text}'
+        if message is None:
+            raise HTTPException(status_code=404, detail="Message not found")
+        if message_data.text is not None:
+            message.text += f'\n{message_data.text}'
+        if message_data.token_usage is not None:
+            message.token_usage = (message.token_usage or 0) + message_data.token_usage
+        if message_data.is_processed is not None:
+            message.is_processed = message_data.is_processed
+        if message_data.is_complete is not None:
+            message.is_complete = message_data.is_complete
         await self.db.commit()
         await self.db.refresh(message)
         return MessageSchema.model_validate(message)
 
-    # +
+    async def replace_message_value(self, message_data: MessageUpdate) -> MessageSchema:
+        """Метод для замены значений сообщения: полностью заменяет существующее значение новым."""
+        result = await self.db.execute(select(MessageModel).where(MessageModel.id == message_data.id))
+        message = result.scalar_one_or_none()
+        if message is None:
+            raise HTTPException(status_code=404, detail="Message not found")
+        if message_data.text is not None:
+            message.text = message_data.text
+        if message_data.token_usage is not None:
+            message.token_usage = message_data.token_usage
+        if message_data.is_processed is not None:
+            message.is_processed = message_data.is_processed
+        if message_data.is_complete is not None:
+            message.is_complete = message_data.is_complete
+        await self.db.commit()
+        await self.db.refresh(message)
+        return MessageSchema.model_validate(message)
+
     async def delete_message(self, message_id: UUID) -> dict:
         """Удаляет сообщение из базы данных по его идентификатору."""
         result = await self.db.execute(select(MessageModel).where(MessageModel.id == message_id))
@@ -48,71 +70,48 @@ class MessageService:
         await self.db.commit()
         return {"status": "success", "message": f"Message with ID {message_id} deleted"}
 
-    # -
-    async def analyze_message(self, message_data: MessageCreate) -> MessageResponse:
-        """
-        Анализирует сообщение и генерирует уточняющие вопросы.
+    async def process_message(self, message_data: MessageNewFromTelegram, user_id: UUID) -> dict:
+        """Обработка сообщения пользователя"""
+        # 1. Получаем тему
+        topic_prompt = await self.get_prompt('topic_prompt')
+        topic, token_usage = await analyze_text(f'Text:{message_data.text}\n{topic_prompt}')
 
-        :param message_data: Данные сообщения для анализа.
-        :return: Ответ, содержащий уточняющие вопросы.
-        """
+        # 2. Сохраняем исходное сообщение
+        message = await self.create_message(
+            MessageCreate(user_id=user_id, text=message_data.text, topic=topic, token_usage=token_usage)
+        )
+        if topic == 'False':
+            # 2.1 Заканчиваем обработку ставим статус is_processed - True
+            await self.update_message_value(MessageUpdate(id=message.id, is_processed=True))
+            return {"message_id": message.id, "text":message_data.text, "topic": topic}
 
-        # Получаем промт из базы данных
-        prompt_result = await self.db.execute(select(PromptModel).where(PromptModel.name == "default_prompt"))
-        prompt = prompt_result.scalars().first()
-        if not prompt:
-            raise HTTPException(status_code=404, detail="Промт не найден")
+        # 3. Определяем суть сообщения, обновляем потраченные токены
+        essence_prompt = await self.get_prompt('essence_prompt')
+        essence, token_usage = await analyze_text(f'Text:{message_data.text}\n{essence_prompt}')
+        await self.replace_message_value(MessageUpdate(id=message.id, text=essence))
+        await self.update_message_value(MessageUpdate(id=message.id, token_usage=token_usage))
 
-        # Обработка текста с использованием модели для определения уточняющих вопросов
-        response, token_usage = await analyze_text(message_data.text, prompt.content)
+        # 4. Проверяем полноту сообщения
+        is_complete_prompt = await self.get_prompt('is_complete_prompt')
+        is_complete, token_usage = await analyze_text(f'Text:{essence}\n{is_complete_prompt}')
+        await self.update_message_value(MessageUpdate(id=message.id, is_complete=is_complete, token_usage=token_usage))
 
-        # Сохраняем исходное сообщение
-        message = MessageModel(user_id=message_data.user_id, text=message_data.text, token_usage=token_usage)
-        self.db.add(message)
-        await self.db.commit()
-        await self.db.refresh(message)
-        return MessageResponse(clarification_questions=response)
+        if is_complete == 'True':
+            return {"message_id": message.id, "text":essence, "topic": topic, "is_complete": True}
 
-    # -
-    async def clarify_message(self, message_id: int, update_data: MessageUpdate) -> MessageResponse:
-        """
-        Уточняет сообщение с дополнительной информацией и выполняет финальный анализ.
+        # 5. Если требуется уточнение, формируем вопрос
+        clarify_prompt = await self.get_prompt('clarify_prompt')
+        clarify_questions, token_usage = await analyze_text(f'Text:{essence}\n{clarify_prompt}')
+        await self.update_message_value(MessageUpdate(id=message.id, token_usage=token_usage))
 
-        :param message_id: ID сообщения для уточнения.
-        :param update_data: Данные для уточнения.
-        :return: Ответ, содержащий обновленные темы.
-        """
-        # Обновляем сообщение после получения уточняющего ответа
-        result = await self.db.execute(select(MessageModel).where(MessageModel.id == message_id))
-        message = result.scalars().first()
-        if not message:
-            raise HTTPException(status_code=404, detail="Сообщение не найдено")
+        return {
+            "message_id": message.id,
+            "text": essence,
+            "topic": topic,
+            "is_complete": False,
+            "clarify_questions": clarify_questions
+        }
 
-        message.text += f" {update_data.clarification_text}"
-        await self.db.commit()
-        await self.db.refresh(message)
-
-        # Финальная обработка текста после получения уточнения
-        themes = finalize_analysis(message.text)
-        return MessageResponse(theme=themes, clarification_questions=[])
-
-    # =-
-    async def get_messages_by_user(self, user_id: UUID) -> List[MessageSchema]:
-        """Получает все сообщения пользователя по его ID."""
-        result = await self.db.execute(select(MessageModel).filter(MessageModel.user_id == user_id))
-        messages = result.scalars().all()
-        return [MessageSchema.from_orm(msg) for msg in messages]
-
-    # =-
-    async def get_message(self, message_id: UUID) -> Optional[MessageSchema]:
-        """Получает конкретное сообщение по его ID."""
-        result = await self.db.execute(select(MessageModel).filter(MessageModel.id == message_id))
-        message = result.scalar_one_or_none()
-        if message:
-            return MessageSchema.from_orm(message)
-        return None  # Можно обработать этот случай в маршрутах
-
-    # +
     async def get_prompt(self, name: str) -> str:
         prompt_result = await self.db.execute(select(PromptModel).where(PromptModel.name == name))
         prompt = prompt_result.scalars().first()
