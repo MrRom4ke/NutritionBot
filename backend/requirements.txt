@@ -6,4 +6,7 @@ pydantic
 python-dotenv
 pydantic-settings
 openai
-
+aioredis
+redis[async]
+spacy
+uvicorn

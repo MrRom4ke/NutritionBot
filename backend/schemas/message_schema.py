@@ -10,15 +10,15 @@ from models.message_models import PromptModel
 class MessageBase(BaseModel):
     """Базовая схема для модели Message."""
     user_id: UUID
-    timestamp: datetime = datetime.now()
     text: str
+    timestamp: datetime
     topic: Optional[str] = None
     is_complete: Optional[bool] = None
     is_processed: bool = False
     token_usage: Optional[int] = None
 
     class Config:
-        orm_mode = True  # Чтобы Pydantic мог работать с ORM объектами
+        from_attributes = True  # Чтобы Pydantic мог работать с ORM объектами
 
 class MessageCreate(MessageBase):
     """Схема для создания нового сообщения."""
@@ -53,6 +53,13 @@ class MessageSchema(MessageBase):
 
 
 # ------------------- Схемы для анализа сообщений -------------------
+class MessageQueueInput(BaseModel):
+    """Схема для входящего сообщения"""
+    tg_user_id: int
+    message_id: int
+    text: str
+    timestamp: float
+
 class MessageNewFromTelegram(BaseModel):
     """Схема для создания нового сообщения из Telegram"""
     telegram_id: int

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -11,11 +9,15 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      REDIS_URL: redis://redis:6379
       PYTHONPATH: /backend  # Устанавливаем PYTHONPATH, чтобы Python видел директории
     ports:
       - "8000:8000"
     depends_on:
+      - bot
+      - alembic
       - db
+      - redis
     volumes:
       - ./backend:/backend  # Монтируем папку backend
 
@@ -27,8 +29,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./bot/.env
-    depends_on:
-      - backend
     volumes:
       - ./bot:/bot  # Монтируем папку bot
       - whisper_cache:/root/.cache/whisper
@@ -61,6 +61,13 @@ services:
       - ./backend:/app/backend  # Монтируем папку backend в контейнер
     working_dir: /app/alembic  # Рабочая директория для Alembic
 
+  redis:
+    image: "redis:6.2"
+    command: ["redis-server", "--notify-keyspace-events", "Ex"]
+    container_name: "nutric_bot_redis"
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
 
 volumes:
   db_data:

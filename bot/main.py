@@ -3,8 +3,8 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from register_handlers import register_handlers
-from config import BOT_TOKEN
+from setup.register_handlers import register_handlers
+from setup.config import BOT_TOKEN
 
 
 # Инициализация бота и диспетчера

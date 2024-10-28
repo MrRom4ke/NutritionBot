@@ -3,7 +3,7 @@ from aiogram.filters import Command
 
 from handlers.start import start
 from handlers.message_handlers import process_message, process_details
-from states import MessageStates
+from fsm.states import MessageStates
 
 
 def register_handlers(dp: Dispatcher):
