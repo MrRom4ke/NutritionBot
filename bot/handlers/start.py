@@ -1,7 +1,7 @@
 from aiogram import types
 from aiogram.client.session import aiohttp
 
-from config import BACKEND_URL
+from setup.config import BACKEND_URL
 
 
 # Команда /start

@@ -31,16 +31,16 @@ class UserService:
             # Возвращаем объект схемы UserSchema
             return UserSchema.model_validate(user)
         return None  # Можно обработать случай, когда пользователь не найден
-#------------
-    async def get_user_by_tg_id(self, telegram_id: int) -> UserSchema:
+
+    async def get_user_by_tg_id(self, tg_user_id: int) -> UserSchema:
         # Находим пользователя по ID
-        result = await self.db.execute(select(UserModel).filter(UserModel.telegram_id == telegram_id))
+        # import pdb; pdb.set_trace()
+        result = await self.db.execute(select(UserModel).filter(UserModel.telegram_id == tg_user_id))
         user = result.scalar_one_or_none()
         if user:
-            # Возвращаем объект схемы UserSchema
             return UserSchema.model_validate(user)
         return None  # Можно обработать случай, когда пользователь не найден
-#-------------
+
     async def get_all_users(self) -> List[UserSchema]:
         # Получаем всех пользователей
         result = await self.db.execute(select(UserModel))

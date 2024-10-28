@@ -2,3 +2,4 @@ aiogram==3.13.1
 python-dotenv
 aiohttp
 openai-whisper==20240930
+booktype

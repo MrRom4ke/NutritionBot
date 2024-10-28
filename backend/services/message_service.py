@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
@@ -6,8 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from models.message_models import MessageModel, PromptModel
-from schemas.message_schema import MessageCreate, MessageSchema, MessageUpdate, MessageNewFromTelegram
+from schemas.message_schema import MessageCreate, MessageSchema, MessageUpdate, MessageNewFromTelegram, \
+    MessageQueueInput
+from services.user_service import UserService
 from utils.ai_utils import analyze_text
+from utils.queue_manager import add_message_to_queue
 
 
 class MessageService:
@@ -18,11 +22,14 @@ class MessageService:
 
     async def create_message(self, message_data: MessageCreate) -> MessageSchema:
         """Создаёт новое сообщение и сохраняет его в базе данных."""
-        message = MessageModel(**message_data.model_dump())
-        self.db.add(message)
-        await self.db.commit()
-        await self.db.refresh(message)
-        return MessageSchema.model_validate(message)
+        try:
+            message = MessageModel(**message_data.model_dump())
+            self.db.add(message)
+            await self.db.commit()
+            await self.db.refresh(message)
+            return MessageSchema.model_validate(message)
+        except Exception as e:
+            print(str(e))
 
     async def update_message_value(self, message_data: MessageUpdate) -> MessageSchema:
         """Метод для обновления сообщения: добавляет новое значение к существующему полю."""
@@ -70,47 +77,62 @@ class MessageService:
         await self.db.commit()
         return {"status": "success", "message": f"Message with ID {message_id} deleted"}
 
-    async def process_message(self, message_data: MessageNewFromTelegram, user_id: UUID) -> dict:
-        """Обработка сообщения пользователя"""
-        # 1. Получаем тему
-        topic_prompt = await self.get_prompt('topic_prompt')
-        topic, token_usage = await analyze_text(f'Text:{message_data.text}\n{topic_prompt}')
+    # async def process_message(self, message_data: MessageNewFromTelegram, user_id: UUID) -> dict:
+    #     """Обработка сообщения пользователя"""
+    #     # 1. Получаем тему
+    #     topic_prompt = await self.get_prompt('topic_prompt')
+    #     topic, token_usage = await analyze_text(f'Text:{message_data.text}\n{topic_prompt}')
+    #
+    #     # 2. Сохраняем исходное сообщение
+    #     message = await self.create_message(
+    #         MessageCreate(user_id=user_id, text=message_data.text, topic=topic, token_usage=token_usage)
+    #     )
+    #     if topic == 'False':
+    #         # 2.1 Заканчиваем обработку ставим статус is_processed - True
+    #         await self.update_message_value(MessageUpdate(id=message.id, is_processed=True))
+    #         return {"message_id": message.id, "text":message_data.text, "topic": topic}
+    #
+    #     # 3. Определяем суть сообщения, обновляем потраченные токены
+    #     essence_prompt = await self.get_prompt('essence_prompt')
+    #     essence, token_usage = await analyze_text(f'Text:{message_data.text}\n{essence_prompt}')
+    #     await self.replace_message_value(MessageUpdate(id=message.id, text=essence))
+    #     await self.update_message_value(MessageUpdate(id=message.id, token_usage=token_usage))
+    #
+    #     # 4. Проверяем полноту сообщения
+    #     is_complete_prompt = await self.get_prompt('is_complete_prompt')
+    #     is_complete, token_usage = await analyze_text(f'Text:{essence}\n{is_complete_prompt}')
+    #     await self.update_message_value(MessageUpdate(id=message.id, is_complete=is_complete, token_usage=token_usage))
+    #
+    #     if is_complete == 'True':
+    #         return {"message_id": message.id, "text":essence, "topic": topic, "is_complete": True}
+    #
+    #     # 5. Если требуется уточнение, формируем вопрос
+    #     clarify_prompt = await self.get_prompt('clarify_prompt')
+    #     clarify_questions, token_usage = await analyze_text(f'Text:{essence}\n{clarify_prompt}')
+    #     await self.update_message_value(MessageUpdate(id=message.id, token_usage=token_usage))
+    #
+    #     return {
+    #         "message_id": message.id,
+    #         "text": essence,
+    #         "topic": topic,
+    #         "is_complete": False,
+    #         "clarify_questions": clarify_questions
+    #     }
 
-        # 2. Сохраняем исходное сообщение
-        message = await self.create_message(
-            MessageCreate(user_id=user_id, text=message_data.text, topic=topic, token_usage=token_usage)
+    async def process_message(self, message_data: dict, tg_user_id: int) -> MessageSchema:
+        """Обрабатывает сообщение и сохраняет его в базе данных."""
+        user_service = UserService(self.db)
+        user = await user_service.get_user_by_tg_id(tg_user_id)
+        if not user:
+            raise ValueError(f"User with ID {tg_user_id} not found.")
+        # Создаем сообщение
+        message_create = MessageCreate(
+            user_id=user.id,
+            text=message_data.get("text"),
+            timestamp=datetime.fromtimestamp(message_data.get("timestamp")),
         )
-        if topic == 'False':
-            # 2.1 Заканчиваем обработку ставим статус is_processed - True
-            await self.update_message_value(MessageUpdate(id=message.id, is_processed=True))
-            return {"message_id": message.id, "text":message_data.text, "topic": topic}
-
-        # 3. Определяем суть сообщения, обновляем потраченные токены
-        essence_prompt = await self.get_prompt('essence_prompt')
-        essence, token_usage = await analyze_text(f'Text:{message_data.text}\n{essence_prompt}')
-        await self.replace_message_value(MessageUpdate(id=message.id, text=essence))
-        await self.update_message_value(MessageUpdate(id=message.id, token_usage=token_usage))
-
-        # 4. Проверяем полноту сообщения
-        is_complete_prompt = await self.get_prompt('is_complete_prompt')
-        is_complete, token_usage = await analyze_text(f'Text:{essence}\n{is_complete_prompt}')
-        await self.update_message_value(MessageUpdate(id=message.id, is_complete=is_complete, token_usage=token_usage))
-
-        if is_complete == 'True':
-            return {"message_id": message.id, "text":essence, "topic": topic, "is_complete": True}
-
-        # 5. Если требуется уточнение, формируем вопрос
-        clarify_prompt = await self.get_prompt('clarify_prompt')
-        clarify_questions, token_usage = await analyze_text(f'Text:{essence}\n{clarify_prompt}')
-        await self.update_message_value(MessageUpdate(id=message.id, token_usage=token_usage))
-
-        return {
-            "message_id": message.id,
-            "text": essence,
-            "topic": topic,
-            "is_complete": False,
-            "clarify_questions": clarify_questions
-        }
+        result = await self.create_message(message_create)
+        return result
 
     async def get_prompt(self, name: str) -> str:
         prompt_result = await self.db.execute(select(PromptModel).where(PromptModel.name == name))

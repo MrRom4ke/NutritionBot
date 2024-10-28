@@ -7,7 +7,14 @@ WORKDIR /backend
 # Копия файла зависимостей
 COPY requirements.txt ./
 
-# Установка зависимостей
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка Python-зависимостей
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копирование всех файлов в рабочую директорию

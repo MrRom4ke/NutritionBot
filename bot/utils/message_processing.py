@@ -2,7 +2,7 @@ import whisper
 import os
 from typing import Optional
 from aiogram import types
-from config import logger
+from setup.config import logger
 
 # Директория для сохранения голосовых сообщений
 DOWNLOAD_DIR = "voice_temps/"

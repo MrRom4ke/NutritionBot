@@ -1,6 +1,6 @@
 import aiohttp
 
-from config import BACKEND_URL
+from setup.config import BACKEND_URL
 
 
 class APIClient:
