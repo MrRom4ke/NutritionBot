@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, Float, Boolean, Date, DateTime, Index, ForeignKey, Table, UniqueConstraint, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 
 from db.base import Base
 
@@ -22,14 +22,12 @@ class MessageModel(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), index=True)  # Внешний ключ на таблицу пользователей
     text = Column(String)
-    topic = Column(String, nullable=True)
-    is_complete = Column(Boolean, nullable=True)
     timestamp = Column(DateTime, default=datetime.now())
     is_processed = Column(Boolean, default=False)
     token_usage = Column(Integer, nullable=True)
 
-    # Связь с моделью User
     user = relationship("UserModel", back_populates="messages")
+    entities = relationship("EntityModel", back_populates="message")
 
 class PromptModel(Base):
     """Модель для хранения промтов, используемых для анализа текста."""

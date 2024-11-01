@@ -11,8 +11,9 @@ async def process_user_queue(tg_user_id: int, db: AsyncSession):
     """Извлекает сообщения пользователя из очереди и обрабатывает их"""
     message_service = MessageService(db)
     messages = await fetch_and_clear_user_queue(tg_user_id)
-    print('RES', messages)
+    print('Fetched messages:', messages)
     for message_data in messages:
+        print('Processing message:', message_data)
         await message_service.process_message(
             message_data=message_data,
             tg_user_id=tg_user_id
@@ -25,7 +26,6 @@ async def check_expired_queues(db: AsyncSession = Depends(get_async_session)):
 
     # Подписываемся на канал уведомлений об истечении срока действия ключей
     await pubsub.subscribe("__keyevent@0__:expired")
-
     async for message in pubsub.listen():
         if message["type"] == "message":
             key = message["data"].decode()

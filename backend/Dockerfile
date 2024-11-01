@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y \
 # Установка Python-зависимостей
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Скачиваем модель spaCy после установки зависимостей
+RUN python -m spacy download ru_core_news_sm
+
 # Копирование всех файлов в рабочую директорию
 COPY . .
 

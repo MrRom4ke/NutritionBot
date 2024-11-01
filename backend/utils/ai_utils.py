@@ -7,12 +7,7 @@ from core.config import settings
 openai.api_key = settings.OPENAI_API_CHAT_KEY
 
 async def analyze_text(prompt: str):
-    """
-    Анализирует текст и определяет уточняющие вопросы.
-
-    :param prompt: Промт для использования в анализе.
-    :return: Список уточняющих вопросов и количество потраченных токенов.
-    """
+    """Анализирует текст и выдает результат по промту и количество потраченных токенов"""
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[

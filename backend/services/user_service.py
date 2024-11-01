@@ -35,8 +35,10 @@ class UserService:
     async def get_user_by_tg_id(self, tg_user_id: int) -> UserSchema:
         # Находим пользователя по ID
         # import pdb; pdb.set_trace()
+        print("Checking database session:", self.db)
         result = await self.db.execute(select(UserModel).filter(UserModel.telegram_id == tg_user_id))
         user = result.scalar_one_or_none()
+        print('User found:', user)  # Проверка значения user
         if user:
             return UserSchema.model_validate(user)
         return None  # Можно обработать случай, когда пользователь не найден
