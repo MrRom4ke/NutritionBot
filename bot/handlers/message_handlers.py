@@ -1,7 +1,6 @@
 # handlers/message_handlers.py
 
 import asyncio
-from collections import deque
 from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 

@@ -20,6 +20,7 @@ services:
       - redis
     volumes:
       - ./backend:/backend  # Монтируем папку backend
+      - spacy_model_cache:/root/.cache/spacy  # Кэшируем модели spaCy
 
   bot:
     build:
@@ -72,3 +73,4 @@ services:
 volumes:
   db_data:
   whisper_cache:
+  spacy_model_cache:  # Определяем volume для кэширования моделей spaCy
