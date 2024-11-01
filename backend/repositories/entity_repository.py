@@ -5,48 +5,36 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.entity_models import EntityModel
 
 
-async def save_entity(db: AsyncSession, message_id: UUID, entities_data: dict):
+async def save_entity(db: AsyncSession, message_id: UUID, entity_data: dict):
     """
     Сохраняет сущность в базе данных, связывая её с сообщением по message_id.
 
     :param db: Сессия базы данных для асинхронных операций
     :param message_id: UUID сообщения, к которому относится сущность
-    :param entities_data: Словарь с данными о сущности (действие, объект, количество, тема)
+    :param entity_data: Словарь с данными о сущности (действие, объект, количество, ..., тема)
     :return: Сохраненная сущность
     """
-    # Проверка содержимого entities_data
-    print(f"Message ID: {message_id}")
-    print(f"Entities Data: {entities_data}")
-
-    action = entities_data.get("action")
-    object_ = entities_data.get("object")
-    quantity = entities_data.get("quantity")
-
-    if not action and not object_ and not quantity:
-        print("No valid entity data to save. Exiting save_entity.")
-        return None
-
     try:
-        # Создаем запись сущности
         entity = EntityModel(
             message_id=message_id,
-            action=action,
-            object=object_,
-            quantity=quantity,
+            action=entity_data.get("action"),
+            object=entity_data.get("object"),
+            specific_object=entity_data.get("specific_object"),
+            location=entity_data.get("location"),
+            quantity=entity_data.get("quantity"),
+            size=entity_data.get("size"),
+            conditions=entity_data.get("conditions"),
+            duration=entity_data.get("duration"),
+            time=entity_data.get("time"),
+            date=entity_data.get("date")
         )
         db.add(entity)
-
-        # Сохраняем изменения
-        await db.commit()
-        await db.refresh(entity)
-        print(f"Entity saved successfully: {entity}")
-        return entity
+        await db.flush()  # Сохраняем изменения в рамках транзакции, но без коммита
+        print("Сущность успешно сохранена:", entity)
     except Exception as e:
-        # Если произошла ошибка, выводим сообщение об ошибке
-        print(f"Failed to save entity: {e}")
-        await db.rollback()
-        return None
-
+        print("Ошибка при сохранении сущности:", e)
+        await db.rollback()  # Откат в случае ошибки
+        raise
 
 async def update_entity_theme_id(db: AsyncSession, message_id: UUID, theme_id: int) -> None:
     """
@@ -61,4 +49,4 @@ async def update_entity_theme_id(db: AsyncSession, message_id: UUID, theme_id: i
         .where(EntityModel.message_id == message_id)
         .values(theme_id=theme_id)
     )
-    await db.commit()
+    await db.flush()

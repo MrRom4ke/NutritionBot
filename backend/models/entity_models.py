@@ -6,9 +6,16 @@ class EntityModel(Base):
     __tablename__ = "entities"
 
     message_id = Column(UUID(as_uuid=True), ForeignKey('messages.id', ondelete="CASCADE"), primary_key=True)  # Связь с сообщением
-    action = Column(String, nullable=True)      # Действие, например, "гулял", "курил"
-    object = Column(String, nullable=True)      # Объект действия, например, "сигарету"
-    quantity = Column(String, nullable=True)    # Количество или продолжительность, например, "30 минут"
+    action = Column(String, nullable=True)  # Действие, например, "гулял"
+    object = Column(String, nullable=True)  # Объект действия, например, "сигарету"
+    specific_object = Column(String, nullable=True)  # Специфический объект, например, "гороховый суп"
+    location = Column(String, nullable=True)  # Место, например, "парк"
+    quantity = Column(String, nullable=True)  # Количество, например, "30 минут"
+    size = Column(String, nullable=True)  # Размер или порция, например, "маленькая порция"
+    conditions = Column(String, nullable=True)  # Условия, например, "без сахара"
+    duration = Column(String, nullable=True)  # Продолжительность, например, "30 минут"
+    time = Column(String, nullable=True)  # Время, например, "07:30" или "утро"
+    date = Column(String, nullable=True)  # Дата, например, "2024-11-01" или "понедельник"
     theme_id = Column(Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True)  # Ссылка на тему, если определена
 
     # Связи
