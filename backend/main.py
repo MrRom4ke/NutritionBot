@@ -33,10 +33,8 @@ async def startup_event():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # Получаем асинхронную сессию
-    async for async_session in get_async_session():
-        # Создаем фоновую задачу для обработки очередей
-        asyncio.create_task(check_expired_queues(async_session))
-        break  # Прерываем после получения одной сессии
+    asyncio.create_task(check_expired_queues())
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

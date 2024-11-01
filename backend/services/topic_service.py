@@ -51,11 +51,27 @@ async def find_or_create_topic(action: str, object_: str, message_id: UUID, db: 
 
 async def add_keywords_to_topic(topic_id: int, keywords: list[str], db: AsyncSession):
     """Добавляет новые ключевые слова к существующей теме, избегая дубликатов."""
-    existing_keywords = {kw.word for kw in (await db.execute(select(Keyword.word).where(Keyword.topic_id == topic_id))).scalars().all()}
-    new_keywords = [Keyword(word=word, topic_id=topic_id) for word in keywords if word and word not in existing_keywords]
-    db.add_all(new_keywords)
-    await db.commit()
-    print(f"Добавлены новые ключевые слова для темы {topic_id}: {new_keywords}")
+    try:
+        # Извлекаем существующие ключевые слова (множество строк)
+        result = await db.execute(select(Keyword.word).where(Keyword.topic_id == topic_id))
+        existing_keywords = set(result.scalars().all())
+
+        # Фильтруем ключевые слова, которые еще не добавлены
+        new_keywords = [Keyword(word=word, topic_id=topic_id) for word in keywords if
+                        word and word not in existing_keywords]
+
+        # Если есть новые ключевые слова, добавляем их
+        if new_keywords:
+            db.add_all(new_keywords)
+            await db.flush()  # Сохраняем без коммита
+            print(f"Добавлены новые ключевые слова для темы {topic_id}: {[kw.word for kw in new_keywords]}")
+        else:
+            print("Новых ключевых слов для добавления нет.")
+
+    except Exception as e:
+        print("Ошибка при добавлении ключевых слов:", e)
+        await db.rollback()  # Откат в случае ошибки
+        raise
 
 async def create_topic_with_keywords(topic_name: str, keywords: list[str], db: AsyncSession) -> Topic:
     """Создает новую тему и добавляет к ней указанные ключевые слова."""

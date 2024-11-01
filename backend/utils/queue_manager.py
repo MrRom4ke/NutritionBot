@@ -13,7 +13,7 @@ async def add_message_to_queue(tg_user_id: int, message_id: int, text: str, time
         "timestamp": timestamp,
     })
     await redis.rpush(queue_key, message_data)
-    await redis.set(f"user_timer:{tg_user_id}", "active", ex=3)
+    await redis.set(f"user_timer:{tg_user_id}", "active", ex=10)
 
 
 async def fetch_and_clear_user_queue(tg_user_id: int):
