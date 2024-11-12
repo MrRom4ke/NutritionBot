@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, UUID
+from sqlalchemy import Column, Integer, String, ForeignKey, UUID, ARRAY, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 from db.base import Base
 
@@ -17,10 +17,12 @@ class EntityModel(Base):
     time = Column(String, nullable=True)  # Время, например, "07:30" или "утро"
     date = Column(String, nullable=True)  # Дата, например, "2024-11-01" или "понедельник"
     theme_id = Column(Integer, ForeignKey("topics.id", ondelete="SET NULL"), nullable=True)  # Ссылка на тему, если определена
+    entity_requirements_id = Column(Integer, ForeignKey("entity_requirements.id"), nullable=True) # Ссылка на требования, если определена
 
     # Связи
     message = relationship("MessageModel", back_populates="entities")
     theme = relationship("Topic")
+    entity_requirement = relationship("EntityRequirement")
 
 
 class Topic(Base):
@@ -42,3 +44,14 @@ class Keyword(Base):
 
     # Связь с моделью 'Topic'
     topic = relationship("Topic", back_populates="keys", foreign_keys=[topic_id])
+
+class EntityRequirement(Base):
+    __tablename__ = "entity_requirements"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    action = Column(String, nullable=True)
+    object = Column(String, nullable=True)
+    required_fields = Column(ARRAY(String), nullable=True)
+    questions = Column(JSON, nullable=True)
+
+    __table_args__ = (UniqueConstraint('action', 'object', name='unique_action_object'),)
